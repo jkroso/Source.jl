@@ -155,3 +155,6 @@ end) == """begin
 end) == """
         "a"
         fn() = 1"""
+
+@test str(:(abstract type A end)) == "abstract type A end"
+@test str(:(abstract type A <: B end)) == "abstract type A <: B end"

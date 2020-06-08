@@ -185,6 +185,8 @@ expr(struc, ::Val{:struct}) = begin
   /(kw*expr(name), indent_all(lines)..., literal("end"))
 end
 
+expr(struc, ::Val{:abstract}) = literal("abstract type ")expr(struc.args[1])literal(" end")
+
 expr(params, ::Val{:parameters}) = literal(";")list_layout(expr.(params.args), par=("",""))
 expr(e, ::Val{:<:}) = pair_layout(expr.(e.args)..., sep=" <: ")
 expr(e, ::Val{:where}) = pair_layout(expr.(e.args)..., sep=" where ")
