@@ -201,7 +201,7 @@ end
 
 expr(params, ::Val{:parameters}) = literal(";")list_layout(expr.(params.args), par=("",""))
 expr(e, ::Val{:<:}) = pair_layout(expr.(e.args)..., sep=" <: ")
-expr(e, ::Val{:where}) = pair_layout(expr.(e.args)..., sep=" where ")
+expr(e, ::Val{:where}) = length(e.args) == 1 ? expr(e.args[1]) : pair_layout(expr.(e.args)..., sep=" where ")
 expr(e, ::Val{:break}) = literal("break")
 expr(e, ::Val{:continue}) = literal("continue")
 expr(e, ::Val{:while}) = begin

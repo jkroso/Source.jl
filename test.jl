@@ -112,6 +112,7 @@ end) == """begin
         end"""
 @test str(:(a<:b)) == "a <: b"
 @test str(:(a where b)) == "a where b"
+@test str(Expr(:where, :a)) == "a"
 @test str(:(while a
   if a
     break
