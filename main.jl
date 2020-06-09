@@ -98,7 +98,12 @@ expr(x, ::Val{:(=)}) = pair_layout(expr.(x.args)..., sep=" = ")
 expr(x, ::Val{:kw}) = pair_layout(expr.(x.args)..., sep="=")
 expr(x, ::Val{:const}) = literal("const ")expr(x.args[1])
 
-expr(x, ::Val{:(::)}) = pair_layout(expr.(x.args)..., sep="::")
+expr(x, ::Val{:(::)}) =
+  if length(x.args) == 1
+    literal("::")expr(x.args[1])
+  else
+    pair_layout(expr.(x.args)..., sep="::")
+  end
 
 expr(x, ::Val{:curly}) = begin
   @capture x name_{params__}

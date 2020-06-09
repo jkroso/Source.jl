@@ -164,3 +164,6 @@ end) == """
 end)) == """macro a()
            Base.@__doc__ abstract type A end
          end"""
+
+@test str(:(a(b::Int) = b)) == "a(b::Int) = b"
+@test str(:(a(::Type{Int}) = 1)) == "a(::Type{Int}) = 1"
