@@ -111,6 +111,7 @@ expr(x, ::Val{:curly}) = begin
 end
 compact(x) = expr(x)
 compact(x::Expr) = compact(x, Val(x.head))
+compact(x, v) = expr(x, v)
 compact(x, ::Val{:<:}) = pair_layout(expr.(x.args)..., sep="<:")
 compact(x, ::Val{:(=)}) = pair_layout(expr.(x.args)..., sep="=")
 
