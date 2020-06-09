@@ -158,3 +158,9 @@ end) == """
 
 @test str(:(abstract type A end)) == "abstract type A end"
 @test str(:(abstract type A <: B end)) == "abstract type A <: B end"
+
+@test str(:(macro a()
+  Base.@__doc__ abstract type A end
+end)) == """macro a()
+           Base.@__doc__ abstract type A end
+         end"""

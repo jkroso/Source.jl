@@ -187,6 +187,13 @@ end
 
 expr(struc, ::Val{:abstract}) = literal("abstract type ")expr(struc.args[1])literal(" end")
 
+expr(meta, ::Val{:meta}) = literal(repr(meta))
+expr(m, ::Val{:macro}) = begin
+  call, block = m.args
+  lines = rmlines(block).args
+  /(literal("macro ")expr(call), indent_all(lines)..., literal("end"))
+end
+
 expr(params, ::Val{:parameters}) = literal(";")list_layout(expr.(params.args), par=("",""))
 expr(e, ::Val{:<:}) = pair_layout(expr.(e.args)..., sep=" <: ")
 expr(e, ::Val{:where}) = pair_layout(expr.(e.args)..., sep=" where ")
@@ -217,6 +224,6 @@ expr(e, ::Val{:macrocall}) = begin
   elseif length(args) == 1 && Meta.isexpr(args[1], :hcat)
     literal(name)expr(args[1])
   else
-    literal("$name ")list_layout(expr.(args), sep=" ", par=("",""))
+    expr(name)literal(" ")list_layout(expr.(args), sep=" ", par=("",""))
   end
 end
