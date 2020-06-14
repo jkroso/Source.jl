@@ -168,3 +168,5 @@ end)) == """macro a()
 
 @test str(:(a(b::Int) = b)) == "a(b::Int) = b"
 @test str(:(a(::Type{Int}) = 1)) == "a(::Type{Int}) = 1"
+@test str(:([b...])) == "[b...]"
+@test str(:(a(b...))) == "a(b...)"

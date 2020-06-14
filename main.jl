@@ -183,6 +183,8 @@ expr(dot, ::Val{:.}) = begin
   expr(left)literal(".")r
 end
 
+expr(splat, ::Val{:...}) = expr(splat.args[1])literal("...")
+
 expr(struc, ::Val{:struct}) = begin
   mutable, name, body = struc.args
   kw = mutable ? literal("mutable struct ") : literal("struct ")
