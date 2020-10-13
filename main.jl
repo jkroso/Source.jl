@@ -204,7 +204,16 @@ end
 
 expr(params, ::Val{:parameters}) = literal(";")list_layout(expr.(params.args), par=("",""))
 expr(e, ::Val{:<:}) = pair_layout(expr.(e.args)..., sep=" <: ")
-expr(e, ::Val{:where}) = length(e.args) == 1 ? expr(e.args[1]) : pair_layout(expr.(e.args)..., sep=" where ")
+expr(e, ::Val{:where}) =
+  if length(e.args) == 1
+    expr(e.args[1])
+  elseif length(e.args) == 2
+    pair_layout(expr.(e.args)..., sep=" where ")
+  else
+    pair_layout(expr(e.args[1]),
+                list_layout(compact.(e.args[2:end]), par=("{","}"), sep=","),
+                sep=" where ")
+  end
 expr(e, ::Val{:break}) = literal("break")
 expr(e, ::Val{:continue}) = literal("continue")
 expr(e, ::Val{:while}) = begin
