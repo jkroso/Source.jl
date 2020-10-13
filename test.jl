@@ -112,6 +112,9 @@ end) == """begin
         end"""
 @test str(:(a<:b)) == "a <: b"
 @test str(:(a where b)) == "a where b"
+@test str(:(a(::B{c,d}) where {c,d} = 1)) == "a(::B{c,d}) where {c,d} = 1"
+@test str(:(B{c,d} where {c,d})) == "B{c,d} where {c,d}"
+@test str(:(B{c,d} where {c,d<:Int})) == "B{c,d} where {c,d<:Int}"
 @test str(Expr(:where, :a)) == "a"
 @test str(:(while a
   if a
@@ -170,3 +173,5 @@ end)) == """macro a()
 @test str(:(a(::Type{Int}) = 1)) == "a(::Type{Int}) = 1"
 @test str(:([b...])) == "[b...]"
 @test str(:(a(b...))) == "a(b...)"
+
+@test str(Expr(:toplevel, quote a end)) == "a"

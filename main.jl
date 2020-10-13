@@ -244,3 +244,5 @@ expr(e, ::Val{:macrocall}) = begin
     expr(name)literal(" ")list_layout(expr.(args), sep=" ", par=("",""))
   end
 end
+
+expr(e, ::Val{:toplevel}) = /(expr.(e.args)...)
