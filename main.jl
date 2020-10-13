@@ -210,9 +210,9 @@ expr(e, ::Val{:where}) =
   elseif length(e.args) == 2
     pair_layout(expr.(e.args)..., sep=" where ")
   else
-    pair_layout(expr(e.args[1]),
-                list_layout(compact.(e.args[2:end]), par=("{","}"), sep=","),
-                sep=" where ")
+    *(expr(e.args[1]),
+      literal(" where "),
+      list_layout(compact.(e.args[2:end]), par=("{","}"), sep=","))
   end
 expr(e, ::Val{:break}) = literal("break")
 expr(e, ::Val{:continue}) = literal("continue")
