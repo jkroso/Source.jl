@@ -22,8 +22,12 @@ end
 tile(x::Set) = list_layout(tile.(x), prefix="Set", par=("([", "])"))
 
 tile(x::T) where T = begin
-  keys = fieldnames(T)
+  keys = collect(Symbol, fieldnames(T))
   isempty(keys) && return literal(repr(x))
+  i = findfirst(k->!isdefined(x, k), keys)
+  if i isa Number
+    keys = keys[1:i-1]
+  end
   vals = (getfield(x, k) for k in keys)
   list_layout(tile.(vals), prefix=name(T, m[]))
 end

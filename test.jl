@@ -175,3 +175,5 @@ end)) == """macro a()
 @test str(:(a(b...))) == "a(b...)"
 
 @test str(Expr(:toplevel, quote a end)) == "a"
+
+@test str(Base.ImmutableDict(:a=>1)) == "Base.ImmutableDict{Symbol, Int64}(Base.ImmutableDict{Symbol, Int64}(), :a, 1)"
