@@ -177,3 +177,11 @@ end)) == """macro a()
 @test str(Expr(:toplevel, quote a end)) == "a"
 
 @test str(Base.ImmutableDict(:a=>1)) == "Base.ImmutableDict{Symbol, Int64}(Base.ImmutableDict{Symbol, Int64}(), :a, 1)"
+
+mutable struct B
+  parent::Union{Nothing,B}
+  child::Union{Nothing,B}
+end
+const circular_ref = B(nothing, B(nothing, nothing))
+circular_ref.child.parent = circular_ref
+@test str(circular_ref) == "B(nothing, B(#= circular reference @-2 =#, nothing))"

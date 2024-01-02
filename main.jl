@@ -1,12 +1,18 @@
 @use "github.com/jkroso/DynamicVar.jl" @dynamic!
 @use "github.com/jkroso/Prospects.jl" interleave
+@use "github.com/jkroso/Sequences.jl" EOS Sequence Cons
 @use PrettyPrinting: pprint, tile, literal, list_layout, indent, pair_layout, Layout
 @use MacroTools: rmlines, @capture
 
 const m = Ref{Module}(Main)
+const seen = Ref{Sequence}(EOS)
 
 resize(w, io) = IOContext(io, :displaysize => (24, w))
-serialize(io, x; mod=@__MODULE__) = @dynamic! let m=mod; pprint(io, x) end
+serialize(io, x; mod=@__MODULE__) = begin
+  @dynamic! let m = mod
+    pprint(io, x)
+  end
+end
 serialize(x; width=100, kwargs...) = begin
   io = IOBuffer()
   serialize(resize(width, io), x; kwargs...)
@@ -19,13 +25,18 @@ name(T::DataType, m) = begin
   string(isdefined(m, n) ? n : T)
 end
 
-tile(x::Set) = list_layout(tile.(x), prefix="Set", par=("([", "])"))
+tile(x::Nothing) = literal("nothing")
+tile(x::Missing) = literal("Missing")
 
-tile(x::T) where T = begin
+tile(x::Set) = handle_circular_refs(x) do x
+  list_layout(tile.(x), prefix="Set", par=("([", "])"))
+end
+
+tile(x::T) where T = handle_circular_refs(x) do x
   keys = collect(Symbol, fieldnames(T))
   isempty(keys) && return literal(repr(x))
   i = findfirst(k->!isdefined(x, k), keys)
-  if i isa Number
+  if !isnothing(i)
     keys = keys[1:i-1]
   end
   vals = (getfield(x, k) for k in keys)
@@ -33,6 +44,17 @@ tile(x::T) where T = begin
 end
 
 tile(m::Module) = literal(string(m))
+
+handle_circular_refs(fn, x) = begin
+  i = 1
+  for y in seen[]
+    y === x && return literal("#= circular reference @-$i =#")
+    i += 1
+  end
+  @dynamic! let seen = Cons(x, seen[])
+    fn(x)
+  end
+end
 
 indent_all(exprs) = Layout[indent(2)expr(x) for x in exprs]
 list_layout(v::Vector{Any}; kwargs...) = list_layout(convert(Vector{Layout}, v); kwargs...)
