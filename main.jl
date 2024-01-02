@@ -1,8 +1,7 @@
-@use "github.com" [
-  "rbt-lang/PrettyPrinting.jl" pprint tile literal list_layout indent pair_layout Layout
-  "MikeInnes/MacroTools.jl" rmlines @capture
-  "jkroso/Prospects.jl" interleave
-  "jkroso/DynamicVar.jl" @dynamic!]
+@use "github.com/jkroso/DynamicVar.jl" @dynamic!
+@use "github.com/jkroso/Prospects.jl" interleave
+@use PrettyPrinting: pprint, tile, literal, list_layout, indent, pair_layout, Layout
+@use MacroTools: rmlines, @capture
 
 const m = Ref{Module}(Main)
 
