@@ -1,4 +1,4 @@
-@use "github.com/jkroso/Rutherford.jl/test.jl" @test
+@use "github.com/jkroso/Rutherford.jl/test.jl" @test testset
 @use "." serialize
 
 str(x, width=100) = serialize(x, mod=@__MODULE__, width=width)
@@ -185,3 +185,24 @@ end
 const circular_ref = B(nothing, B(nothing, nothing))
 circular_ref.child.parent = circular_ref
 @test str(circular_ref) == "B(nothing, B(#= circular reference @-2 =#, nothing))"
+
+@use "./compact.jl" src
+@enum Fruit apple
+
+testset("compact") do
+  @test sprint(src, Base.ImmutableDict("a"=>1)) == "ImmutableDict{String,Int64}(\"a\"=>1)"
+  @test sprint(src, [1,2,3]) == "Int64[1,2,3]"
+  @test sprint(src, :a) == ":a"
+  @test sprint(src, 'b') == "'b'"
+  @test sprint(src, 1.1) == "1.1"
+  @test sprint(src, 1//2) == "1//2"
+  @test sprint(src, "abc") == "\"abc\""
+  @test sprint(src, Set([1,2,3])) == "Set{Int64}([2,3,1])"
+  @test sprint(src, A(1,2)) == "A(1,2)"
+  @test sprint(src, (1,2)) == "(1,2)"
+  @test sprint(src, (1,)) == "(1,)"
+  @test sprint(src, (a=1,b=2)) == "(a=1,b=2)"
+  @test sprint(src, (a=1,)) == "(a=1,)"
+  @test sprint(src, :(1+1)) == "1 + 1"
+  @test sprint(src, apple) == "Fruit(0)"
+end
