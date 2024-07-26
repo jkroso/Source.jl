@@ -1,7 +1,9 @@
 @use "github.com/jkroso/Rutherford.jl/test.jl" @test testset
 @use "." serialize
+@use "./expr.jl" expr
+@use Dates
 
-str(x, width=100) = serialize(x, mod=@__MODULE__, width=width)
+str(x, width=100) = serialize(x; width=width, mod=@__MODULE__)
 
 struct A
   a
@@ -11,8 +13,11 @@ end
 @test str(A(1,2)) == "A(1, 2)"
 @test str(Dict(1=>2,3=>4), 13) == """
                                   Dict(3 => 4,
-                                       1 => 2)"""
+                                       1 => 2)\
+                                  """
+
 @test str([1,2,3]) == "[1, 2, 3]"
+@test str([1,2,3], 9) == "[1,\n 2,\n 3]"
 @test str((1,2,3)) == "(1, 2, 3)"
 @test str((1,)) == "(1,)"
 @test str(Set([1,2])) == "Set([2, 1])"
@@ -176,7 +181,7 @@ end)) == """macro a()
 
 @test str(Expr(:toplevel, quote a end)) == "a"
 
-@test str(Base.ImmutableDict(:a=>1)) == "Base.ImmutableDict{Symbol, Int64}(Base.ImmutableDict{Symbol, Int64}(), :a, 1)"
+@test str(Base.ImmutableDict(:a=>1,:b=>2)) == "Base.ImmutableDict(:b => 2, :a => 1)"
 
 mutable struct B
   parent::Union{Nothing,B}
@@ -187,22 +192,49 @@ circular_ref.child.parent = circular_ref
 @test str(circular_ref) == "B(nothing, B(#= circular reference @-2 =#, nothing))"
 
 @use "./compact.jl" src
+@use "github.com/jkroso/Units.jl/Money" AUD Money
 @enum Fruit apple
 
-testset("compact") do
-  @test sprint(src, Base.ImmutableDict("a"=>1)) == "ImmutableDict{String,Int64}(\"a\"=>1)"
-  @test sprint(src, [1,2,3]) == "Int64[1,2,3]"
-  @test sprint(src, :a) == ":a"
-  @test sprint(src, 'b') == "'b'"
-  @test sprint(src, 1.1) == "1.1"
-  @test sprint(src, 1//2) == "1//2"
-  @test sprint(src, "abc") == "\"abc\""
-  @test sprint(src, Set([1,2,3])) == "Set{Int64}([2,3,1])"
-  @test sprint(src, A(1,2)) == "A(1,2)"
-  @test sprint(src, (1,2)) == "(1,2)"
-  @test sprint(src, (1,)) == "(1,)"
-  @test sprint(src, (a=1,b=2)) == "(a=1,b=2)"
-  @test sprint(src, (a=1,)) == "(a=1,)"
-  @test sprint(src, :(1+1)) == "1 + 1"
-  @test sprint(src, apple) == "Fruit(0)"
-end
+@test src(Base.ImmutableDict("a"=>1)) == """
+                                         import Base.ImmutableDict
+                                         ImmutableDict{String,Int64}(\"a\"=>1)\
+                                         """
+@test src([1,2,3]) == "[1,2,3]"
+@test src(:(:a)) == ":a"
+@test src(:a) == "a"
+@test src('b') == "'b'"
+@test src("ab") == "\"ab\""
+@test src(1.1) == "1.1"
+@test src(1//2) == "1//2"
+@test src("abc") == "\"abc\""
+@test src(Set([1,2,3])) == "Set{Int64}([2,3,1])"
+@test src(A(1,2)) == """
+                     @use "$(@__FILE__)" A
+                     A(1,2)\
+                     """
+@test src((1,2)) == "(1,2)"
+@test src((1,)) == "(1,)"
+@test src((a=1,b=2)) == "(a=1,b=2)"
+@test src((a=1,)) == "(a=1,)"
+@test src(:(1+1)) == "1+1"
+@test src(apple) == """
+                    @use "$(@__FILE__)" Fruit
+                    Fruit(0)\
+                    """
+@test src(Dates.Date(1776, 7, 4)) == "import Dates.Date\nDate(1776,7,4)"
+@test src(Dates.DateTime(1776, 7, 4, 12, 0, 0)) == """
+                                                   import Dates.DateTime
+                                                   DateTime(1776,7,4,12,0,0)\
+                                                   """
+@test src(Dates.Time(1,2,3)) == "import Dates.Time\nTime(1,2,3)"
+@test src(Base.UUID(UInt128(1))) == "import Base.UUID\nUUID(1)"
+@test src(r"abc") == "r\"abc\""
+@test src(1:2) == "1:2"
+@test src(1:2:3) == "1:2:3"
+@test src('a':'c') == "'a':1:'c'"
+@test src(v"1.2.3") == "v\"1.2.3\""
+@test src(:(@a[1 2 3])) == "@a[1 2 3]"
+@test src(3.50AUD) == """
+                      @use "github.com/jkroso/Units.jl/Money.jl" Money
+                      Money{:AUD}(3.5)\
+                      """
