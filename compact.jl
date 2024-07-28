@@ -17,12 +17,20 @@ end
 src(x) = @dynamic! let globals = Set{GlobalRef}()
   str = sprint(src, x)
   buf = IOBuffer()
-  gs = filter(globals[]) do g
-    g.mod in (Main, Core) && return false
-    !isdefined(Main, g.name)
+  imports = Dict{Module,Vector{Symbol}}()
+  for g in globals[]
+    g.mod in (Main, Core) && continue
+    isdefined(Main, g.name) && continue
+    syms = get!(Vector{Symbol}, imports, g.mod)
+    push!(syms, g.name)
   end
-  s = join([(generate_import(g) for g in gs)..., str], '\n')
-  replace(s, r"#=[^=]+=# " => "")
+  sprint() do io
+    for (m,names) in imports
+      src(io, generate_import(m,names))
+      write(io, '\n')
+    end
+    write(io, str)
+  end
 end
 
 src(io::IO, x) = begin

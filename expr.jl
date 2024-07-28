@@ -55,21 +55,26 @@ find_globals(e) = begin
   globals
 end
 
-generate_import((;mod,name)::GlobalRef) = begin
-  isstdlib(mod) && return :(import $(nameof(mod)).$(name))
+generate_import((;mod,name)::GlobalRef) = generate_import(mod, [name])
+generate_import(mod, names) = begin
+  isstdlib(mod) && return stdlib_import(mod, names)
   f = getfile(mod)
   m = match(r"(.+)/refs/(?<user>[^/]+)/(?<module>[^/]+)/(?<ref>[^/]+)/(?<file>.+)", f)
   if isnothing(m)
-    startswith(f, "$(homedir())/.julia") && return :(@use $(nameof(mod)): $name)
-    return :(@use $(string(f)) $name)
+    startswith(f, "$(homedir())/.julia") && return pkg_import(mod, names)
+    return kip_import(f, names)
   end
   base,user,repo,ref,file = m
   dir = joinpath(base, "repos", user, repo)
   gr = LibGit2.GitRepo(dir)
   url = URI(LibGit2.url(LibGit2.get(LibGit2.GitRemote, gr, "origin")))
   url = URI{Symbol("")}(path=url.path.parent * url.path.name[1:end-4] * file, host=url.host)
-  :(@use $(string(url)) $name)
+  kip_import(url, names)
 end
+
+stdlib_import(mod, names) = Expr(:import, Expr(:(:), Expr(:(.), nameof(mod)), (Expr(:(.), n) for n in names)...))
+pkg_import(mod, names) = Expr(:macrocall, var"@use", Expr(:(:), Expr(:(.), nameof(mod)), (Expr(:(.), n) for n in names)...))
+kip_import(f, names) = Expr(:macrocall, var"@use", string(f), names...)
 
 isstdlib(m::Module) = m in (Base, Core) || string(nameof(m)) in Kip.stdlib
 

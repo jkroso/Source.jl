@@ -20,10 +20,9 @@ For types that use a fancy constructor syntax you can get it to serialize to tha
 
 # without expr(::URI) defined the output is very verbose
 src(uri"github.com") == """
-                        @use "github.com/jkroso/URI.jl/FSPath.jl" RelativePath
-                        @use "github.com/jkroso/URI.jl/main.jl" URI
-                        @use "github.com/jkroso/Sequences.jl/main.jl" EmptySequence
-                        @use "github.com/jkroso/Sequences.jl/main.jl" Sequence
+                        @use("github.com/jkroso/Sequences.jl/main.jl",EmptySequence,Sequence)
+                        @use("github.com/jkroso/URI.jl/FSPath.jl",RelativePath)
+                        @use("github.com/jkroso/URI.jl/main.jl",URI)
                         URI{Symbol("")}("","","github.com",0,RelativePath(EmptySequence{String}(Sequence{String} where Path)),(),"")\
                         """
 
@@ -33,7 +32,7 @@ expr(x::URI) = Expr(:macrocall,
 
 # with expr(::URI) defined the output is shorter and more readable
 src(uri"github.com") == """
-                        @use "github.com/jkroso/URI.jl" @uri_str
+                        @use("github.com/jkroso/URI.jl",@uri_str)
                         uri"github.com"\
                         """
 evalstring(src(uri"github.com")) == uri"github.com"
