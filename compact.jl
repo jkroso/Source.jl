@@ -13,14 +13,16 @@ mapjoin(fn, io, itr, (pre, sep, post)=('(', ',', ')')) = begin
 end
 
 @dynamic! globals = Set{GlobalRef}()
+@dynamic! basemodule = Main
 
-src(x) = @dynamic! let globals = Set{GlobalRef}()
+src(x; mod=Main) = @dynamic! let globals = Set{GlobalRef}(),
+                                 basemodule = mod
   str = sprint(src, x)
   buf = IOBuffer()
   imports = Dict{Module,Vector{Symbol}}()
   for g in globals[]
     g.mod in (Main, Core) && continue
-    isdefined(Main, g.name) && continue
+    isdefined(basemodule[], g.name) && continue
     syms = get!(Vector{Symbol}, imports, g.mod)
     push!(syms, g.name)
   end
@@ -343,5 +345,16 @@ src(io, e, ::Val{:macrocall}) = begin
     mapjoin(src, io, args)
   end
 end
+
+src(io, e, ::Val{:import}) = begin
+  write(io, "import ")
+  src(io, e.args[1])
+end
+
+src(io, e, ::Val{:(:)}) = begin
+  importname(io, e.args[1])
+  mapjoin(importname, io, e.args[2:end], (':', ',', ""))
+end
+importname(io, e) = src(io, e.args[1])
 
 src(io, e, ::Val{:toplevel}) = mapjoin(src, io, e.args, ("", '\n', ""))
