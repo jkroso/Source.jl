@@ -1,6 +1,6 @@
 @use "github.com/jkroso/DynamicVar.jl" @dynamic!
-@use "./expr" expr generate_import evalstring
 @use MacroTools: postwalk, @capture
+@use "./expr" expr generate_import
 
 mapjoin(fn, io, itr, (pre, sep, post)=('(', ',', ')')) = begin
   first = true
@@ -13,22 +13,23 @@ mapjoin(fn, io, itr, (pre, sep, post)=('(', ',', ')')) = begin
 end
 
 @dynamic! globals = Set{GlobalRef}()
-@dynamic! basemodule = Main
 
-src(x; mod=Main) = @dynamic! let globals = Set{GlobalRef}(),
-                                 basemodule = mod
+src(x; mod=Main) = @dynamic! let globals = Set{GlobalRef}()
   str = sprint(src, x)
   buf = IOBuffer()
   imports = Dict{Module,Vector{Symbol}}()
   for g in globals[]
     g.mod in (Main, Core) && continue
-    isdefined(basemodule[], g.name) && continue
     syms = get!(Vector{Symbol}, imports, g.mod)
     push!(syms, g.name)
   end
   sprint() do io
-    for (m,names) in imports
-      src(io, generate_import(m,names))
+    for (m, names) in imports
+      if m === mod
+        write(io, "(;$(join(names, ',')),) = ctx")
+      else
+        src(io, generate_import(m, names))
+      end
       write(io, '\n')
     end
     write(io, str)
@@ -45,11 +46,7 @@ ref(g::GlobalRef) = begin
   push!(globals[], g)
   g.name
 end
-ref(D::DataType) = ref(GlobalRef(getmod(D), getname(D)))
-getmod(D::DataType) = D.name.module
-getmod(D::UnionAll) = getmod(D.body)
-getname(D::DataType) = D.name.name
-getname(D::UnionAll) = getmod(D.body)
+ref(D::DataType) = ref(GlobalRef(parentmodule(D), nameof(D)))
 
 src(io::IO, T::DataType) = begin
   write(io, ref(T))

@@ -1,6 +1,5 @@
 @use "github.com/jkroso/Rutherford.jl/test.jl" @test testset
-@use "." serialize
-@use "./expr.jl" expr
+@use "." serialize expr src hydrate
 @use Dates
 
 str(x, width=100) = serialize(x; width=width, mod=@__MODULE__)
@@ -238,3 +237,11 @@ circular_ref.child.parent = circular_ref
                       @use "github.com/jkroso/Units.jl/Money.jl" Money
                       Money{:AUD}(3.5)\
                       """
+
+module M
+  struct C
+    a
+  end
+end
+
+@test hydrate(src(M.C(1), mod=M), mod=M) == M.C(1)

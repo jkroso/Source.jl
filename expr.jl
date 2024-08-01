@@ -41,10 +41,9 @@ expr(x::UnitRange) = :($(expr(x.start)):$(expr(x.stop)))
 expr(x::StepRange) = :($(expr(x.start)):$(expr(x.step)):$(expr(x.stop)))
 expr(x::Char) = x
 expr(v::VersionNumber) = Expr(:macrocall, Symbol("@v_str"), LineNumberNode(0), string(v))
-expr(x::Base.ExprNode) = Expr(:macrocall, GlobalRef(URI.body.name.module, Symbol("@uri_str")), string(x))
+expr(x::Base.ExprNode) = Expr(:macrocall, GlobalRef(parentmodule(URI), Symbol("@uri_str")), string(x))
 
-ref(T::DataType) = isdefined(Main, name(T)) ? name(T) : GlobalRef(T.name.module, name(T))
-name(T::DataType) = T.name.name
+ref(T::DataType) = isdefined(Main, nameof(T)) ? nameof(T) : GlobalRef(parentmodule(T), nameof(T))
 remove_globals(e) = postwalk(x->x isa GlobalRef ? x.name : x, e)
 find_globals(e) = begin
   globals = Set{GlobalRef}()
@@ -83,18 +82,4 @@ getfile(m::Module) = begin
   for (file, mod) in Kip.modules
     mod === m && return file
   end
-end
-
-src(x) = begin
-  e = expr(x)
-  globals = find_globals(e)
-  isempty(globals) && return string(e)
-  s = join([(generate_import(g) for g in globals)..., remove_globals(e)], "\r\n")
-  replace(s, r"#=[^=]+=# " => "")
-end
-
-evalstring(src::AbstractString) = begin
-  m = Module()
-  eval(m, :(using Kip))
-  eval(m, Meta.parseall(src))
 end
