@@ -1,8 +1,8 @@
 @use "github.com/jkroso/Rutherford.jl/test.jl" @test testset
-@use "." serialize expr src hydrate
+@use "." source src expr hydrate @src @hydrate
 @use Dates
 
-str(x, width=100) = serialize(x; width=width, mod=@__MODULE__)
+str(x, width=100) = source(x; width=width, mod=@__MODULE__)
 
 struct A
   a
@@ -28,7 +28,7 @@ end
 @test str(:(+(1,2))) == "1 + 2"
 @test str(:(1*m)) == "1m"
 @test str(:(!3)) == "!3"
-@test str(:(1+:1)) == "1 + :1"
+@test str(:(1+:1)) == "1 + 1"
 @test str(:(1 + :(1+2))) == "1 + :(1 + 2)"
 @test str(quote :(1+2; 3) end) == """
                                   quote
@@ -195,7 +195,7 @@ circular_ref.child.parent = circular_ref
 @enum Fruit apple
 
 @test src(Base.ImmutableDict("a"=>1)) == """
-                                         import Base.ImmutableDict
+                                         import Base:ImmutableDict
                                          ImmutableDict{String,Int64}(\"a\"=>1)\
                                          """
 @test src([1,2,3]) == "[1,2,3]"
@@ -208,7 +208,7 @@ circular_ref.child.parent = circular_ref
 @test src("abc") == "\"abc\""
 @test src(Set([1,2,3])) == "Set{Int64}([2,3,1])"
 @test src(A(1,2)) == """
-                     @use "$(@__FILE__)" A
+                     @use("$(@__FILE__)",A)
                      A(1,2)\
                      """
 @test src((1,2)) == "(1,2)"
@@ -217,16 +217,16 @@ circular_ref.child.parent = circular_ref
 @test src((a=1,)) == "(a=1,)"
 @test src(:(1+1)) == "1+1"
 @test src(apple) == """
-                    @use "$(@__FILE__)" Fruit
+                    @use("$(@__FILE__)",Fruit)
                     Fruit(0)\
                     """
-@test src(Dates.Date(1776, 7, 4)) == "import Dates.Date\nDate(1776,7,4)"
+@test src(Dates.Date(1776, 7, 4)) == "import Dates:Date\nDate(1776,7,4)"
 @test src(Dates.DateTime(1776, 7, 4, 12, 0, 0)) == """
-                                                   import Dates.DateTime
+                                                   import Dates:DateTime
                                                    DateTime(1776,7,4,12,0,0)\
                                                    """
-@test src(Dates.Time(1,2,3)) == "import Dates.Time\nTime(1,2,3)"
-@test src(Base.UUID(UInt128(1))) == "import Base.UUID\nUUID(1)"
+@test src(Dates.Time(1,2,3)) == "import Dates:Time\nTime(1,2,3)"
+@test src(Base.UUID(UInt128(1))) == "import Base:UUID\nUUID(1)"
 @test src(r"abc") == "r\"abc\""
 @test src(1:2) == "1:2"
 @test src(1:2:3) == "1:2:3"
@@ -234,7 +234,7 @@ circular_ref.child.parent = circular_ref
 @test src(v"1.2.3") == "v\"1.2.3\""
 @test src(:(@a[1 2 3])) == "@a[1 2 3]"
 @test src(3.50AUD) == """
-                      @use "github.com/jkroso/Units.jl/Money.jl" Money
+                      @use("github.com/jkroso/Units.jl/Money.jl",Money)
                       Money{:AUD}(3.5)\
                       """
 

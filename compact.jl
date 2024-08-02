@@ -1,5 +1,5 @@
 @use "github.com/jkroso/DynamicVar.jl" @dynamic!
-@use MacroTools: postwalk, @capture
+@use MacroTools: postwalk, @capture, rmlines
 @use "./expr" expr generate_import
 
 mapjoin(fn, io, itr, (pre, sep, post)=('(', ',', ')')) = begin
@@ -20,12 +20,13 @@ src(x; mod=Main) = @dynamic! let globals = Set{GlobalRef}()
   imports = Dict{Module,Vector{Symbol}}()
   for g in globals[]
     g.mod in (Main, Core) && continue
+    isdefined(Main, g.name) && getfield(Main, g.name) == getfield(g.mod, g.name) && continue
     syms = get!(Vector{Symbol}, imports, g.mod)
     push!(syms, g.name)
   end
   sprint() do io
     for (m, names) in imports
-      if m === mod
+      if m === mod && mod != Main
         write(io, "(;$(join(names, ',')),) = ctx")
       else
         src(io, generate_import(m, names))
@@ -327,6 +328,7 @@ end
 
 src(io, e, ::Val{:macrocall}) = begin
   name, args = e.args[1], e.args[2:end]
+  args = filter(x->!(x isa LineNumberNode), args)
   m = match(r"(\w+)_str\"?$", string(name))
   if !isnothing(m)
     write(io, m[1])

@@ -41,7 +41,7 @@ expr(x::UnitRange) = :($(expr(x.start)):$(expr(x.stop)))
 expr(x::StepRange) = :($(expr(x.start)):$(expr(x.step)):$(expr(x.stop)))
 expr(x::Char) = x
 expr(v::VersionNumber) = Expr(:macrocall, Symbol("@v_str"), LineNumberNode(0), string(v))
-expr(x::Base.ExprNode) = Expr(:macrocall, GlobalRef(parentmodule(URI), Symbol("@uri_str")), string(x))
+expr(x::Base.ExprNode) = x
 
 ref(T::DataType) = isdefined(Main, nameof(T)) ? nameof(T) : GlobalRef(parentmodule(T), nameof(T))
 remove_globals(e) = postwalk(x->x isa GlobalRef ? x.name : x, e)

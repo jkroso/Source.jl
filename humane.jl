@@ -3,7 +3,7 @@
 @use MacroTools: rmlines, @capture, postwalk
 @use "./expr" expr
 
-serialize(io, x; mod=@__MODULE__) = begin
+source(io, x; mod=@__MODULE__) = begin
   expression = postwalk(expr(x)) do e
     e isa GlobalRef || return e
     e.mod == mod && return e.name
@@ -12,9 +12,9 @@ serialize(io, x; mod=@__MODULE__) = begin
   pprint(io, tile(expression))
 end
 
-serialize(x; width=100, kwargs...) = begin
+source(x; width=100, kwargs...) = begin
   io = IOBuffer()
-  serialize(IOContext(io, :displaysize => (24, width)), x; kwargs...)
+  source(IOContext(io, :displaysize => (24, width)), x; kwargs...)
   String(take!(io))
 end
 
