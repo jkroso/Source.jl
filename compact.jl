@@ -26,6 +26,7 @@ src(x; mod=Main) = @dynamic! let globals = Set{GlobalRef}()
   end
   sprint() do io
     for (m, names) in imports
+      sort!(names)
       if m === mod && mod != Main
         write(io, "(;$(join(names, ',')),) = ctx")
       else
