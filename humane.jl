@@ -234,3 +234,12 @@ tile(e, ::Val{:macrocall}) = begin
 end
 
 tile(e, ::Val{:toplevel}) = /(tile.(e.args)...)
+
+tile(e, ::Val{:let}) = begin
+  head, body = e.args
+  vars = Meta.isexpr(head, :block) ? rmlines(head).args : [head]
+  header = /(map(e->tile(e)literal(","), vars[1:end-1])..., tile(vars[end]))
+  /(literal("let ")header,
+    indent_all(rmlines(body).args)...,
+    literal("end"))
+end

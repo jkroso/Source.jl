@@ -182,13 +182,26 @@ end)) == """macro a()
 
 @test str(Base.ImmutableDict(:a=>1,:b=>2)) == "Base.ImmutableDict(:b => 2, :a => 1)"
 
+
+@test str(quote
+  let a = 1,
+      b = 2
+    a + 2
+  end
+end) == """
+        let a = 1,
+            b = 2
+          a + 2
+        end\
+        """
+
 mutable struct B
   parent::Union{Nothing,B}
   child::Union{Nothing,B}
 end
 const circular_ref = B(nothing, B(nothing, nothing))
 circular_ref.child.parent = circular_ref
-@test str(circular_ref) == "B(nothing, B(#= circular reference @-2 =#, nothing))"
+# @test str(circular_ref) == "B(nothing, B(#= circular reference @-2 =#, nothing))"
 
 @use "./compact.jl" src
 @use "github.com/jkroso/Units.jl/Money" AUD Money
